@@ -29,8 +29,31 @@ game_state = "INTRO"
 day = 1
 stress = 50
 
+# ------------------------------------------------------------
+# DAY SYSTEM
+# ------------------------------------------------------------
+
+DAY_LENGTH = 60  # seconds
+
+INTERNS_PER_DAY = {
+    1: 5,
+    2: 7,
+    3: 9,
+    4: 12,
+    5: 15
+}
+
+total_interns_today = INTERNS_PER_DAY[day]
+interns_completed = 0
+
+day_timer = DAY_LENGTH * FPS
+
+
+# ============================================================
+# LISTS / TARGET
+# ============================================================
+
 interns = []
-snacks = []
 
 target_person = None
 
@@ -49,22 +72,20 @@ FONT_SMALL = pygame.font.SysFont(
     20
 )
 
-FONT_STATUS = pygame.font.SysFont(
+FONT_TINY = pygame.font.SysFont(
     "georgia",
-    26,
-    bold=True
+    16
 )
 
 
 # ============================================================
-# PLAYER
+# PLAYER / OFFICE WORKER
 # ============================================================
 
 player_x = SCREEN_WIDTH // 2
 player_y = SCREEN_HEIGHT // 2
 
-BASE_PLAYER_SPEED = 5
-player_speed = BASE_PLAYER_SPEED
+player_speed = 5
 
 PLAYER_WIDTH = 40
 PLAYER_HEIGHT = 60
@@ -85,140 +106,6 @@ player_image = pygame.transform.scale(
 
 
 # ============================================================
-# STRESS STATUS
-# ============================================================
-
-current_stress_tier = None
-
-popup_text = ""
-popup_timer = 0
-
-POPUP_DURATION = 180
-
-
-# ============================================================
-# STRESS TIER FUNCTION
-# ============================================================
-
-def get_stress_tier():
-
-    if stress >= 100:
-        return "MAX"
-
-    elif stress >= 75:
-        return "HIGH"
-
-    elif stress >= 50:
-        return "MEDIUM"
-
-    elif stress >= 25:
-        return "LOW"
-
-    else:
-        return "ZEN"
-
-
-# ============================================================
-# STRESS EFFECTS
-# ============================================================
-
-def apply_stress_effects():
-
-    global player_speed
-
-    tier = get_stress_tier()
-
-    # --------------------------------------------------------
-    # MAX STRESS
-    # --------------------------------------------------------
-
-    if tier == "MAX":
-
-        player_speed = 3
-
-    # --------------------------------------------------------
-    # HIGH STRESS
-    # --------------------------------------------------------
-
-    elif tier == "HIGH":
-
-        player_speed = 4
-
-    # --------------------------------------------------------
-    # MEDIUM STRESS
-    # --------------------------------------------------------
-
-    elif tier == "MEDIUM":
-
-        player_speed = 5
-
-    # --------------------------------------------------------
-    # LOW STRESS
-    # --------------------------------------------------------
-
-    elif tier == "LOW":
-
-        player_speed = 6
-
-    # --------------------------------------------------------
-    # ZEN
-    # --------------------------------------------------------
-
-    elif tier == "ZEN":
-
-        player_speed = 7
-
-
-# ============================================================
-# STRESS POPUP
-# ============================================================
-
-def trigger_stress_popup():
-
-    global popup_text
-    global popup_timer
-
-    tier = get_stress_tier()
-
-    if tier == "MAX":
-
-        popup_text = (
-            "MAX STRESS! "
-            "You're overwhelmed!"
-        )
-
-    elif tier == "HIGH":
-
-        popup_text = (
-            "HIGH STRESS — "
-            "Movement slowed!"
-        )
-
-    elif tier == "MEDIUM":
-
-        popup_text = (
-            "STRESSED — "
-            "Stay focused."
-        )
-
-    elif tier == "LOW":
-
-        popup_text = (
-            "CALM — "
-            "Movement increased!"
-        )
-
-    elif tier == "ZEN":
-
-        popup_text = (
-            "ZEN MODE — "
-            "Maximum movement speed!"
-        )
-
-    popup_timer = POPUP_DURATION
-
-
-# ============================================================
 # PLAYER UPDATE
 # ============================================================
 
@@ -229,22 +116,20 @@ def update_player():
     global target_person
     global stress
 
-    # Apply current stress effect
-    apply_stress_effects()
-
     # ========================================================
     # CHASING SOMEONE
     # ========================================================
 
     if target_person is not None:
 
+        # Follow their X position
         target_x = (
             target_person.x
             + INTERN_WIDTH // 2
             - PLAYER_WIDTH // 2
         )
 
-        # Move toward target
+        # Move toward them
         if player_x < target_x:
 
             player_x += player_speed
@@ -253,34 +138,66 @@ def update_player():
 
             player_x -= player_speed
 
-        # Player stays at same Y position
-        # while chasing
+        # Keep player at their current Y position
+        # while chasing.
 
         # ----------------------------------------------------
-        # Check if caught
+        # CONFRONTATION
         # ----------------------------------------------------
 
         if abs(player_x - target_x) <= player_speed:
 
             player_x = target_x
 
-            target_person.caught = True
+            person = target_person
 
-            # ------------------------------------------------
-            # Stress changes
-            # ------------------------------------------------
+            # =================================================
+            # IMPORTANT BUG FIX
+            # =================================================
+            #
+            # Clear target_person IMMEDIATELY.
+            #
+            # Previously, target_person stayed assigned while
+            # the dialogue was happening, so this code ran
+            # repeatedly every frame.
+            #
+            target_person = None
 
-            if target_person.has_badge:
+            # Put person into dialogue state
+            person.state = "DIALOGUE"
+            person.dialogue_timer = 0
 
-                # Accidentally interrupted staff
+            # -------------------------------------------------
+            # STAFF
+            # -------------------------------------------------
+
+            if person.has_badge:
+
                 stress += 10
+
+                person.dialogue = random.choice([
+                    "I'm WORKING!",
+                    "Do I look like an intern to you?",
+                    "Excuse me?!",
+                    "I have a meeting!",
+                    "Can you not?!"
+                ])
+
+            # -------------------------------------------------
+            # ACTUAL INTERN
+            # -------------------------------------------------
 
             else:
 
-                # Successfully caught intern
                 stress -= 5
 
-            target_person = None
+                person.dialogue = random.choice([
+                    "Wait—what?!",
+                    "I was just getting snacks...",
+                    "Okay okay, I'm leaving!",
+                    "You caught me!",
+                    "Fine! I'm going!"
+                ])
 
     # ========================================================
     # NORMAL MOVEMENT
@@ -291,19 +208,15 @@ def update_player():
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_w]:
-
             player_y -= player_speed
 
         if keys[pygame.K_s]:
-
             player_y += player_speed
 
         if keys[pygame.K_a]:
-
             player_x -= player_speed
 
         if keys[pygame.K_d]:
-
             player_x += player_speed
 
     # ========================================================
@@ -327,6 +240,10 @@ def update_player():
     )
 
 
+# ============================================================
+# DRAW PLAYER
+# ============================================================
+
 def draw_player():
 
     SCREEN.blit(
@@ -340,17 +257,11 @@ def draw_player():
 # ============================================================
 
 lines = [
-
     "In the Nokia Ottawa Office...",
-
     "...the towers are divided.",
-
     "Meet your office worker. Stress: rising.",
-
     "Work is piling up. The snack table is under threat.",
-
-    "Defend your tower. Don't let those interns get to the snacks!",
-
+    "Defend your tower. Don't let those interns get to the snacks!"
 ]
 
 line_index = 0
@@ -362,12 +273,14 @@ def update_cutscene():
 
 def draw_cutscene():
 
-    # Clear screen
     SCREEN.fill(
         (251, 198, 207)
     )
 
-    # Main text
+    # --------------------------------------------------------
+    # MAIN TEXT
+    # --------------------------------------------------------
+
     text = FONT_MAIN.render(
         lines[line_index],
         True,
@@ -379,12 +292,14 @@ def draw_cutscene():
         (
             SCREEN_WIDTH // 2
             - text.get_width() // 2,
-
             SCREEN_HEIGHT // 2
         )
     )
 
-    # Prompt
+    # --------------------------------------------------------
+    # PROMPT
+    # --------------------------------------------------------
+
     prompt = FONT_SMALL.render(
         "Press SPACE to continue",
         True,
@@ -396,7 +311,6 @@ def draw_cutscene():
         (
             SCREEN_WIDTH // 2
             - prompt.get_width() // 2,
-
             SCREEN_HEIGHT - 60
         )
     )
@@ -411,55 +325,8 @@ INTERN_HEIGHT = 60
 
 spawn_timer = 0
 
-
-# ============================================================
-# DAY DIFFICULTY
-# ============================================================
-
-def get_spawn_interval():
-
-    if day == 1:
-
-        return 120
-
-    elif day == 2:
-
-        return 100
-
-    elif day == 3:
-
-        return 80
-
-    elif day == 4:
-
-        return 65
-
-    else:
-
-        return 50
-
-
-def get_speed_range():
-
-    if day == 1:
-
-        return 1.5, 3.0
-
-    elif day == 2:
-
-        return 2.0, 3.5
-
-    elif day == 3:
-
-        return 2.5, 4.0
-
-    elif day == 4:
-
-        return 3.0, 4.5
-
-    else:
-
-        return 3.5, 5.0
+# Lower = more frequent spawning
+spawn_interval = 90
 
 
 # ============================================================
@@ -480,63 +347,54 @@ class Intern:
 
         self.has_badge = has_badge
 
-        self.caught = False
-
         # ----------------------------------------------------
-        # Movement
+        # MOVEMENT
         # ----------------------------------------------------
-
-        min_speed, max_speed = get_speed_range()
 
         self.speed = random.uniform(
-            min_speed,
-            max_speed
+            1.5,
+            3.0
         )
 
         # ----------------------------------------------------
-        # Pause system
+        # STATE
         # ----------------------------------------------------
-
-        self.walk_distance = random.randint(
-            250,
-            500
-        )
-
-        self.start_x = x
-
-        self.pause_time = random.randint(
-            60,
-            120
-        )
-
-        self.pause_timer = 0
-
-        self.has_paused = False
 
         self.state = "WALKING"
 
+        # WALKING
+        # DIALOGUE
+        # LEAVING
+
         # ----------------------------------------------------
-        # Colour
+        # DIALOGUE
         # ----------------------------------------------------
 
-        if has_badge:
+        self.dialogue = ""
 
-            # Staff
-            self.color = (
-                100,
-                149,
-                237
-            )
+        self.dialogue_timer = 0
 
-        else:
+        # 1.5 seconds
+        self.dialogue_duration = int(
+            1.5 * FPS
+        )
 
-            # Intern
-            self.color = (
-                121,
-                186,
-                236
-            )
+        # ----------------------------------------------------
+        # COLOUR
+        # ----------------------------------------------------
 
+        # Staff = blue
+        # Intern = lighter blue
+
+        self.color = (
+            (100, 149, 237)
+            if has_badge
+            else (121, 186, 236)
+        )
+
+    # ========================================================
+    # RECTANGLE
+    # ========================================================
 
     def get_rect(self):
 
@@ -547,47 +405,47 @@ class Intern:
             INTERN_HEIGHT
         )
 
+    # ========================================================
+    # UPDATE
+    # ========================================================
 
     def update(self):
 
-        if self.caught:
-
-            return
-
-        # ====================================================
+        # ----------------------------------------------------
         # WALKING
-        # ====================================================
+        # ----------------------------------------------------
 
         if self.state == "WALKING":
 
             self.x += self.speed
 
+        # ----------------------------------------------------
+        # DIALOGUE
+        # ----------------------------------------------------
+
+        elif self.state == "DIALOGUE":
+
+            self.dialogue_timer += 1
+
             if (
-                not self.has_paused
-                and self.x >= (
-                    self.start_x
-                    + self.walk_distance
-                )
+                self.dialogue_timer
+                >= self.dialogue_duration
             ):
 
-                self.state = "PAUSED"
+                self.state = "LEAVING"
 
-                self.pause_timer = 0
+        # ----------------------------------------------------
+        # LEAVING
+        # ----------------------------------------------------
 
-        # ====================================================
-        # PAUSED
-        # ====================================================
+        elif self.state == "LEAVING":
 
-        elif self.state == "PAUSED":
+            # Move upward
+            self.y -= 5
 
-            self.pause_timer += 1
-
-            if self.pause_timer >= self.pause_time:
-
-                self.state = "WALKING"
-
-                self.has_paused = True
-
+    # ========================================================
+    # DRAW
+    # ========================================================
 
     def draw(self):
 
@@ -600,6 +458,22 @@ class Intern:
             border_radius=8
         )
 
+        # ----------------------------------------------------
+        # STAFF BADGE
+        # ----------------------------------------------------
+
+        if self.has_badge:
+
+            pygame.draw.circle(
+                SCREEN,
+                (255, 215, 0),
+                (
+                    int(self.x + 10),
+                    int(self.y + 10)
+                ),
+                5
+            )
+
 
 # ============================================================
 # SPAWN INTERN
@@ -607,42 +481,20 @@ class Intern:
 
 def spawn_intern():
 
+    # Spawn from left side
     x = -INTERN_WIDTH
 
-    y = 200
-
-    new_rect = pygame.Rect(
-        x,
-        y,
-        INTERN_WIDTH,
-        INTERN_HEIGHT
+    # Random vertical position
+    y = random.randint(
+        170,
+        300
     )
 
-    overlapping = False
-
-    # Check existing people
-    for person in interns:
-
-        if new_rect.colliderect(
-            person.get_rect()
-        ):
-
-            overlapping = True
-
-            break
-
-    if overlapping:
-
-        return
-
-    # --------------------------------------------------------
     # 80% staff
-    # 20% intern
-    # --------------------------------------------------------
+    # 20% actual intern
 
     has_badge = (
-        random.random()
-        < 0.80
+        random.random() < 0.80
     )
 
     interns.append(
@@ -655,23 +507,21 @@ def spawn_intern():
 
 
 # ============================================================
-# CLICK ON INTERN
+# CLICK / CONFRONT WORKER
 # ============================================================
 
 def catch_intern(pos):
 
     global target_person
 
-    # If already chasing someone,
-    # don't select another person
+    # Don't select someone while already chasing
     if target_person is not None:
-
         return
 
     for person in interns:
 
-        if person.caught:
-
+        # Only walking workers can be clicked
+        if person.state != "WALKING":
             continue
 
         if person.get_rect().collidepoint(pos):
@@ -689,7 +539,7 @@ def update_interns():
 
     global spawn_timer
     global stress
-    global target_person
+    global interns_completed
 
     # ========================================================
     # SPAWN
@@ -697,15 +547,18 @@ def update_interns():
 
     spawn_timer += 1
 
+    # Only spawn until today's quota is reached
     if (
-        spawn_timer
-        >= get_spawn_interval()
+        len(interns)
+        + interns_completed
+        < total_interns_today
     ):
 
-        spawn_timer = 0
+        if spawn_timer >= spawn_interval:
 
-        spawn_intern()
+            spawn_timer = 0
 
+            spawn_intern()
 
     # ========================================================
     # UPDATE PEOPLE
@@ -713,45 +566,48 @@ def update_interns():
 
     for person in interns:
 
-        if not person.caught:
-
-            person.update()
-
+        person.update()
 
     # ========================================================
-    # PEOPLE LEAVE
+    # REMOVE PEOPLE
     # ========================================================
 
     remaining_people = []
 
     for person in interns:
 
-        # Don't remove target
-        if person == target_person:
-
-            remaining_people.append(
-                person
-            )
-
-            continue
-
         # ----------------------------------------------------
-        # Escaped
+        # ESCAPED THROUGH RIGHT SIDE
         # ----------------------------------------------------
 
-        if person.x > SCREEN_WIDTH:
+        if (
+            person.state == "WALKING"
+            and person.x > SCREEN_WIDTH
+        ):
 
-            # ONLY interns cause stress
+            # Only actual interns increase stress
             if not person.has_badge:
 
                 stress += 5
 
+            interns_completed += 1
+
             continue
 
-        remaining_people.append(
-            person
-        )
+        # ----------------------------------------------------
+        # LEFT THROUGH TOP AFTER CONFRONTATION
+        # ----------------------------------------------------
 
+        if (
+            person.state == "LEAVING"
+            and person.y + INTERN_HEIGHT < 0
+        ):
+
+            interns_completed += 1
+
+            continue
+
+        remaining_people.append(person)
 
     interns[:] = remaining_people
 
@@ -765,6 +621,86 @@ def draw_interns():
     for person in interns:
 
         person.draw()
+
+        # ====================================================
+        # DIALOGUE BOX
+        # ====================================================
+
+        if person.state == "DIALOGUE":
+
+            dialogue_width = 320
+            dialogue_height = 85
+
+            dialogue_x = (
+                person.x
+                + INTERN_WIDTH // 2
+                - dialogue_width // 2
+            )
+
+            dialogue_y = (
+                person.y - 100
+            )
+
+            # Keep box on screen
+
+            dialogue_x = max(
+                10,
+                min(
+                    dialogue_x,
+                    SCREEN_WIDTH
+                    - dialogue_width
+                    - 10
+                )
+            )
+
+            dialogue_y = max(
+                80,
+                dialogue_y
+            )
+
+            dialogue_rect = pygame.Rect(
+                int(dialogue_x),
+                int(dialogue_y),
+                dialogue_width,
+                dialogue_height
+            )
+
+            # ------------------------------------------------
+            # BOX
+            # ------------------------------------------------
+
+            pygame.draw.rect(
+                SCREEN,
+                (255, 255, 255),
+                dialogue_rect,
+                border_radius=10
+            )
+
+            pygame.draw.rect(
+                SCREEN,
+                (40, 40, 40),
+                dialogue_rect,
+                2,
+                border_radius=10
+            )
+
+            # ------------------------------------------------
+            # TEXT
+            # ------------------------------------------------
+
+            dialogue_text = FONT_TINY.render(
+                person.dialogue,
+                True,
+                (40, 40, 40)
+            )
+
+            SCREEN.blit(
+                dialogue_text,
+                (
+                    dialogue_x + 15,
+                    dialogue_y + 30
+                )
+            )
 
 
 # ============================================================
@@ -807,15 +743,91 @@ STRESS_BAR_X = (
 STRESS_BAR_Y = 30
 
 
+# ============================================================
+# STRESS POPUPS
+# ============================================================
+
+stress_popup = ""
+
+stress_popup_timer = 0
+
+STRESS_POPUP_DURATION = 150
+
+last_stress_level = None
+
+
+# ============================================================
+# GET STRESS LEVEL
+# ============================================================
+
+def get_stress_level():
+
+    if stress >= 100:
+
+        return "100"
+
+    elif stress >= 75:
+
+        return "75"
+
+    elif stress >= 50:
+
+        return "50"
+
+    else:
+
+        return "25"
+
+
+# ============================================================
+# TRIGGER POPUP
+# ============================================================
+
+def trigger_stress_popup(level):
+
+    global stress_popup
+    global stress_popup_timer
+
+    if level == "100":
+
+        stress_popup = (
+            "MAX STRESS! You're overwhelmed!"
+        )
+
+    elif level == "75":
+
+        stress_popup = (
+            "HIGH STRESS! Things are getting hectic."
+        )
+
+    elif level == "50":
+
+        stress_popup = (
+            "STEADY. Keep your cool."
+        )
+
+    elif level == "25":
+
+        stress_popup = (
+            "LOW STRESS! You're feeling relaxed."
+        )
+
+    stress_popup_timer = (
+        STRESS_POPUP_DURATION
+    )
+
+
+# ============================================================
+# UPDATE STRESS
+# ============================================================
+
 def update_stress():
 
     global stress
-    global current_stress_tier
-    global popup_timer
+    global stress_popup_timer
+    global last_stress_level
 
-    # --------------------------------------------------------
-    # Clamp stress
-    # --------------------------------------------------------
+    # Keep stress between 0 and 100
 
     stress = max(
         0,
@@ -825,37 +837,101 @@ def update_stress():
         )
     )
 
+    current_level = (
+        get_stress_level()
+    )
+
+    # Trigger popup when entering
+    # a different stress range
+
+    if (
+        current_level
+        != last_stress_level
+    ):
+
+        trigger_stress_popup(
+            current_level
+        )
+
+        last_stress_level = (
+            current_level
+        )
+
+    # Popup countdown
+
+    if stress_popup_timer > 0:
+
+        stress_popup_timer -= 1
+
+
+# ============================================================
+# STRESS BUFFS / DEBUFFS
+# ============================================================
+
+def get_player_speed():
+
     # --------------------------------------------------------
-    # Determine tier
+    # 0-25%
+    # CALM BUFF
     # --------------------------------------------------------
 
-    new_tier = get_stress_tier()
+    if stress <= 25:
+
+        return 6
 
     # --------------------------------------------------------
-    # First frame
+    # 26-50%
+    # NORMAL
     # --------------------------------------------------------
 
-    if current_stress_tier is None:
+    elif stress <= 50:
 
-        current_stress_tier = new_tier
-
-    # --------------------------------------------------------
-    # Tier changed
-    # --------------------------------------------------------
-
-    elif new_tier != current_stress_tier:
-
-        current_stress_tier = new_tier
-
-        trigger_stress_popup()
+        return 5
 
     # --------------------------------------------------------
-    # Popup timer
+    # 51-75%
+    # STRESSED
     # --------------------------------------------------------
 
-    if popup_timer > 0:
+    elif stress <= 75:
 
-        popup_timer -= 1
+        return 4
+
+    # --------------------------------------------------------
+    # 76-100%
+    # OVERWHELMED
+    # --------------------------------------------------------
+
+    else:
+
+        return 3
+
+
+def get_stress_effect_text():
+
+    if stress <= 25:
+
+        return (
+            "BUFF: Calm - movement speed increased"
+        )
+
+    elif stress <= 50:
+
+        return (
+            "STATUS: Normal"
+        )
+
+    elif stress <= 75:
+
+        return (
+            "DEBUFF: Stressed - movement slowed"
+        )
+
+    else:
+
+        return (
+            "DEBUFF: OVERWHELMED - movement greatly slowed"
+        )
 
 
 # ============================================================
@@ -865,7 +941,7 @@ def update_stress():
 def draw_stress_bar():
 
     # --------------------------------------------------------
-    # Label
+    # LABEL
     # --------------------------------------------------------
 
     stress_text = FONT_SMALL.render(
@@ -883,7 +959,7 @@ def draw_stress_bar():
     )
 
     # --------------------------------------------------------
-    # Background
+    # BACKGROUND
     # --------------------------------------------------------
 
     pygame.draw.rect(
@@ -898,7 +974,7 @@ def draw_stress_bar():
     )
 
     # --------------------------------------------------------
-    # Filled section
+    # FILLED BAR
     # --------------------------------------------------------
 
     filled_width = int(
@@ -918,7 +994,7 @@ def draw_stress_bar():
     )
 
     # --------------------------------------------------------
-    # Border
+    # BORDER
     # --------------------------------------------------------
 
     pygame.draw.rect(
@@ -940,23 +1016,18 @@ def draw_stress_bar():
 
 def draw_stress_popup():
 
-    if popup_timer <= 0:
-
+    if stress_popup_timer <= 0:
         return
 
-    # --------------------------------------------------------
-    # Popup box
-    # --------------------------------------------------------
-
-    popup_width = 500
-    popup_height = 80
+    popup_width = 600
+    popup_height = 90
 
     popup_x = (
         SCREEN_WIDTH // 2
         - popup_width // 2
     )
 
-    popup_y = 80
+    popup_y = 120
 
     popup_rect = pygame.Rect(
         popup_x,
@@ -965,27 +1036,26 @@ def draw_stress_popup():
         popup_height
     )
 
+    # Background
     pygame.draw.rect(
         SCREEN,
-        (50, 50, 50),
+        (40, 40, 40),
         popup_rect,
-        border_radius=10
+        border_radius=12
     )
 
+    # Border
     pygame.draw.rect(
         SCREEN,
         (255, 255, 255),
         popup_rect,
         2,
-        border_radius=10
+        border_radius=12
     )
 
-    # --------------------------------------------------------
-    # Popup text
-    # --------------------------------------------------------
-
-    text = FONT_STATUS.render(
-        popup_text,
+    # Text
+    text = FONT_MAIN.render(
+        stress_popup,
         True,
         (255, 255, 255)
     )
@@ -995,19 +1065,129 @@ def draw_stress_popup():
         (
             SCREEN_WIDTH // 2
             - text.get_width() // 2,
-
-            popup_y
-            + popup_height // 2
-            - text.get_height() // 2
+            popup_y + 27
         )
     )
 
 
 # ============================================================
-# DAY DISPLAY
+# DAY SYSTEM
 # ============================================================
 
-def draw_day():
+def start_new_day():
+
+    global day
+    global stress
+    global day_timer
+    global total_interns_today
+    global interns_completed
+    global spawn_timer
+    global player_x
+    global player_y
+    global target_person
+    global last_stress_level
+
+    day += 1
+
+    # --------------------------------------------------------
+    # NO MORE DAYS
+    # --------------------------------------------------------
+
+    if day not in INTERNS_PER_DAY:
+
+        game_state_change_to_ending()
+
+        return
+
+    # --------------------------------------------------------
+    # NEW DAY VALUES
+    # --------------------------------------------------------
+
+    total_interns_today = (
+        INTERNS_PER_DAY[day]
+    )
+
+    interns_completed = 0
+
+    day_timer = (
+        DAY_LENGTH * FPS
+    )
+
+    spawn_timer = 0
+
+    interns.clear()
+
+    target_person = None
+
+    # --------------------------------------------------------
+    # RESET PLAYER
+    # --------------------------------------------------------
+
+    player_x = (
+        SCREEN_WIDTH // 2
+    )
+
+    player_y = (
+        SCREEN_HEIGHT // 2
+    )
+
+    # --------------------------------------------------------
+    # RESET STRESS
+    # --------------------------------------------------------
+
+    stress = 50
+
+    last_stress_level = None
+
+
+# ============================================================
+# GO TO ENDING
+# ============================================================
+
+def game_state_change_to_ending():
+
+    global game_state
+
+    game_state = "ENDING"
+
+
+# ============================================================
+# DAY TIMER
+# ============================================================
+
+def update_day_timer():
+
+    global day_timer
+
+    day_timer -= 1
+
+    # Day ends when:
+    #
+    # 1. Time runs out
+    #
+    # OR
+    #
+    # 2. All workers have been dealt with
+
+    if (
+        day_timer <= 0
+        or
+        interns_completed
+        >= total_interns_today
+    ):
+
+        start_new_day()
+
+
+# ============================================================
+# DAY INFORMATION
+# ============================================================
+
+def draw_day_info():
+
+    # --------------------------------------------------------
+    # DAY
+    # --------------------------------------------------------
 
     day_text = FONT_SMALL.render(
         f"DAY {day}",
@@ -1018,47 +1198,84 @@ def draw_day():
     day_background = pygame.Rect(
         20,
         20,
-        day_text.get_width() + 20,
-        day_text.get_height() + 10
+        150,
+        80
     )
 
     pygame.draw.rect(
         SCREEN,
         (50, 50, 50),
-        day_background
+        day_background,
+        border_radius=8
     )
 
     SCREEN.blit(
         day_text,
-        (30, 25)
+        (30, 27)
     )
 
+    # --------------------------------------------------------
+    # INTERNS LEFT
+    # --------------------------------------------------------
 
-# ============================================================
-# DAY START POPUP
-# ============================================================
+    interns_left = (
+        total_interns_today
+        - interns_completed
+    )
 
-def draw_day_info():
+    interns_text = FONT_TINY.render(
+        f"INTERNS LEFT: {interns_left}/{total_interns_today}",
+        True,
+        (255, 255, 255)
+    )
 
-    if day == 1:
+    SCREEN.blit(
+        interns_text,
+        (30, 60)
+    )
 
-        info = "DAY 1 — The office is relatively calm."
+    # --------------------------------------------------------
+    # TIME
+    # --------------------------------------------------------
 
-    elif day == 2:
+    seconds_left = max(
+        0,
+        day_timer // FPS
+    )
 
-        info = "DAY 2 — More people are entering the office."
+    minutes = (
+        seconds_left // 60
+    )
 
-    elif day == 3:
+    seconds = (
+        seconds_left % 60
+    )
 
-        info = "DAY 3 — Everyone seems to be moving faster."
+    time_text = FONT_TINY.render(
+        f"TIME: {minutes}:{seconds:02d}",
+        True,
+        (255, 255, 255)
+    )
 
-    elif day == 4:
+    SCREEN.blit(
+        time_text,
+        (190, 25)
+    )
 
-        info = "DAY 4 — Things are getting chaotic."
+    # --------------------------------------------------------
+    # STRESS EFFECT
+    # --------------------------------------------------------
 
-    else:
+    effect_text = FONT_TINY.render(
+        get_stress_effect_text(),
+        True,
+        (255, 255, 255)
+    )
 
-        info = "DAY 5+ — Absolute office mayhem."
+    SCREEN.blit(
+        effect_text,
+        (190, 55)
+    )
 
 
 # ============================================================
@@ -1066,6 +1283,14 @@ def draw_day_info():
 # ============================================================
 
 def update_gameplay():
+
+    global player_speed
+
+    # Stress determines movement speed
+
+    player_speed = (
+        get_player_speed()
+    )
 
     update_player()
 
@@ -1077,32 +1302,40 @@ def update_gameplay():
 
     update_stress()
 
+    update_day_timer()
+
+
+# ============================================================
+# DRAW GAMEPLAY
+# ============================================================
 
 def draw_gameplay():
 
-    # IMPORTANT:
-    # Clear the screen every frame
+    # ========================================================
+    # CLEAR ENTIRE SCREEN
+    # ========================================================
+
     SCREEN.fill(
         (40, 90, 40)
     )
 
-    # --------------------------------------------------------
-    # Game objects
-    # --------------------------------------------------------
+    # ========================================================
+    # GAME OBJECTS
+    # ========================================================
 
     draw_tower()
-
-    draw_snacks()
 
     draw_interns()
 
     draw_player()
 
-    # --------------------------------------------------------
-    # UI
-    # --------------------------------------------------------
+    draw_snacks()
 
-    draw_day()
+    # ========================================================
+    # UI
+    # ========================================================
+
+    draw_day_info()
 
     draw_stress_bar()
 
@@ -1120,22 +1353,36 @@ def update_ending():
 def draw_ending():
 
     SCREEN.fill(
-        (20, 20, 20)
+        (30, 30, 50)
     )
 
-    text = FONT_MAIN.render(
-        "GAME OVER",
+    title = FONT_MAIN.render(
+        "THE WORKDAY IS OVER",
         True,
         (255, 255, 255)
     )
 
     SCREEN.blit(
-        text,
+        title,
         (
             SCREEN_WIDTH // 2
-            - text.get_width() // 2,
+            - title.get_width() // 2,
+            250
+        )
+    )
 
-            SCREEN_HEIGHT // 2
+    message = FONT_SMALL.render(
+        "You survived the Nokia Ottawa Office.",
+        True,
+        (255, 255, 255)
+    )
+
+    SCREEN.blit(
+        message,
+        (
+            SCREEN_WIDTH // 2
+            - message.get_width() // 2,
+            310
         )
     )
 
@@ -1162,10 +1409,9 @@ while running:
 
             running = False
 
-
-        # ====================================================
+        # ----------------------------------------------------
         # INTRO
-        # ====================================================
+        # ----------------------------------------------------
 
         if game_state == "INTRO":
 
@@ -1179,19 +1425,23 @@ while running:
 
                         game_state = "GAMEPLAY"
 
+                        day_timer = (
+                            DAY_LENGTH * FPS
+                        )
 
-        # ====================================================
+        # ----------------------------------------------------
         # GAMEPLAY
-        # ====================================================
+        # ----------------------------------------------------
 
         elif game_state == "GAMEPLAY":
 
             if event.type == pygame.MOUSEBUTTONDOWN:
 
-                catch_intern(
-                    event.pos
-                )
+                if event.button == 1:
 
+                    catch_intern(
+                        event.pos
+                    )
 
     # ========================================================
     # UPDATE + DRAW
@@ -1203,20 +1453,17 @@ while running:
 
         draw_cutscene()
 
-
     elif game_state == "GAMEPLAY":
 
         update_gameplay()
 
         draw_gameplay()
 
-
     elif game_state == "ENDING":
 
         update_ending()
 
         draw_ending()
-
 
     # ========================================================
     # DISPLAY
