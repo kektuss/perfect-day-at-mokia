@@ -2,10 +2,6 @@ import pygame
 import random
 
 
-# ============================================================
-# PERSON CLASS
-# ============================================================
-
 class Person:
 
     def __init__(
@@ -21,50 +17,24 @@ class Person:
         self.y = y
 
         self.is_intern = is_intern
-
         self.image = image
-
-        # ----------------------------------------------------
-        # SIZE
-        # ----------------------------------------------------
 
         self.width = game.person_width
         self.height = game.person_height
-
-        # ----------------------------------------------------
-        # MOVEMENT
-        # ----------------------------------------------------
 
         self.speed = random.uniform(
             1.5,
             3.0
         )
 
-        # ----------------------------------------------------
-        # STATE
-        # ----------------------------------------------------
-
         self.state = "WALKING"
 
-        # WALKING
-        # DIALOGUE
-        # LEAVING
-
-        # ----------------------------------------------------
-        # DIALOGUE
-        # ----------------------------------------------------
-
         self.dialogue = ""
-
         self.dialogue_timer = 0
 
         self.dialogue_duration = int(
             1.5 * game.fps
         )
-
-    # ========================================================
-    # GET RECTANGLE
-    # ========================================================
 
     def get_rect(self):
 
@@ -75,23 +45,11 @@ class Person:
             self.height
         )
 
-    # ========================================================
-    # UPDATE
-    # ========================================================
-
     def update(self):
-
-        # ----------------------------------------------------
-        # WALKING
-        # ----------------------------------------------------
 
         if self.state == "WALKING":
 
             self.x += self.speed
-
-        # ----------------------------------------------------
-        # DIALOGUE
-        # ----------------------------------------------------
 
         elif self.state == "DIALOGUE":
 
@@ -104,18 +62,9 @@ class Person:
 
                 self.state = "LEAVING"
 
-        # ----------------------------------------------------
-        # LEAVING
-        # ----------------------------------------------------
-
         elif self.state == "LEAVING":
 
-            # Move upward
             self.y -= 5
-
-    # ========================================================
-    # DRAW
-    # ========================================================
 
     def draw(self, screen):
 
@@ -128,27 +77,16 @@ class Person:
         )
 
 
-# ============================================================
-# GAME CLASS
-# ============================================================
-
 class Game:
 
     def __init__(self):
 
-        # ====================================================
-        # PYGAME
-        # ====================================================
-
         pygame.init()
 
-        # ====================================================
-        # SETTINGS
-        # ====================================================
+        # Settings
 
         self.screen_width = 1080
         self.screen_height = 720
-
         self.fps = 60
 
         self.screen = pygame.display.set_mode(
@@ -164,20 +102,14 @@ class Game:
 
         self.clock = pygame.time.Clock()
 
-        # ====================================================
-        # GAME STATE
-        # ====================================================
+        # Game state
 
         self.game_state = "INTRO"
 
-        # ====================================================
-        # DAY SYSTEM
-        # ====================================================
+        # Day system
 
         self.day_length = 60
-
         self.day = 1
-
         self.max_day = 5
 
         self.day_timer = (
@@ -198,20 +130,15 @@ class Game:
 
         self.people_completed = 0
 
-        # ====================================================
-        # STRESS
-        # ====================================================
+        # Stress
 
         self.stress = 50
-
         self.last_stress_level = None
 
-        # ====================================================
-        # PLAYER
-        # ====================================================
+        # Player
 
-        self.player_width = 40
-        self.player_height = 60
+        self.player_width = 60
+        self.player_height = 90
 
         self.player_x = (
             self.screen_width // 2
@@ -223,24 +150,18 @@ class Game:
 
         self.player_speed = 5
 
-        # ====================================================
-        # PEOPLE
-        # ====================================================
+        # People
 
-        self.person_width = 40
-        self.person_height = 60
+        self.person_width = 60
+        self.person_height = 90
 
         self.people = []
-
         self.target_person = None
 
         self.spawn_timer = 0
-
         self.spawn_interval = 90
 
-        # ====================================================
-        # BACKGROUNDS
-        # ====================================================
+        # Backgrounds
 
         self.backgrounds = []
 
@@ -258,13 +179,9 @@ class Game:
                 )
             )
 
-            self.backgrounds.append(
-                image
-            )
+            self.backgrounds.append(image)
 
-        # ====================================================
-        # INTERN SPRITES
-        # ====================================================
+        # Intern sprites
 
         self.intern_images = []
 
@@ -282,13 +199,9 @@ class Game:
                 )
             )
 
-            self.intern_images.append(
-                image
-            )
+            self.intern_images.append(image)
 
-        # ====================================================
-        # FULL-TIME SPRITES
-        # ====================================================
+        # Full-time worker sprites
 
         self.fulltime_images = []
 
@@ -306,13 +219,9 @@ class Game:
                 )
             )
 
-            self.fulltime_images.append(
-                image
-            )
+            self.fulltime_images.append(image)
 
-        # ====================================================
-        # PLAYER IMAGE
-        # ====================================================
+        # Player image
 
         self.player_image = pygame.image.load(
             "assets/player.jpg"
@@ -326,9 +235,7 @@ class Game:
             )
         )
 
-        # ====================================================
-        # FONTS
-        # ====================================================
+        # Fonts
 
         self.font_main = pygame.font.SysFont(
             "georgia",
@@ -345,12 +252,10 @@ class Game:
             16
         )
 
-        # ====================================================
-        # CUTSCENE
-        # ====================================================
+        # Cutscene
 
         self.lines = [
-            "In the Nokia Ottawa Office...",
+            "In the Mokia Ottawa Office...",
             "...the towers are divided.",
             "Meet your office worker. Stress: rising.",
             "Work is piling up. The snack table is under threat.",
@@ -359,9 +264,7 @@ class Game:
 
         self.line_index = 0
 
-        # ====================================================
-        # STRESS BAR
-        # ====================================================
+        # Stress bar
 
         self.stress_bar_width = 250
         self.stress_bar_height = 25
@@ -374,19 +277,11 @@ class Game:
 
         self.stress_bar_y = 30
 
-        # ====================================================
-        # STRESS POPUPS
-        # ====================================================
+        # Stress popups
 
         self.stress_popup = ""
-
         self.stress_popup_timer = 0
-
         self.stress_popup_duration = 150
-
-    # ========================================================
-    # RUN GAME
-    # ========================================================
 
     def run(self):
 
@@ -397,7 +292,6 @@ class Game:
             running = self.handle_events()
 
             self.update()
-
             self.draw()
 
             pygame.display.flip()
@@ -408,25 +302,13 @@ class Game:
 
         pygame.quit()
 
-    # ========================================================
-    # EVENTS
-    # ========================================================
-
     def handle_events(self):
 
         for event in pygame.event.get():
 
-            # ------------------------------------------------
-            # QUIT
-            # ------------------------------------------------
-
             if event.type == pygame.QUIT:
 
                 return False
-
-            # ------------------------------------------------
-            # INTRO
-            # ------------------------------------------------
 
             if self.game_state == "INTRO":
 
@@ -448,10 +330,6 @@ class Game:
                                 * self.fps
                             )
 
-            # ------------------------------------------------
-            # GAMEPLAY
-            # ------------------------------------------------
-
             elif self.game_state == "GAMEPLAY":
 
                 if (
@@ -465,19 +343,11 @@ class Game:
                             event.pos
                         )
 
-            # ------------------------------------------------
-            # ENDING
-            # ------------------------------------------------
-
             elif self.game_state == "ENDING":
 
                 pass
 
         return True
-
-    # ========================================================
-    # UPDATE
-    # ========================================================
 
     def update(self):
 
@@ -493,10 +363,6 @@ class Game:
 
             self.update_ending()
 
-    # ========================================================
-    # DRAW
-    # ========================================================
-
     def draw(self):
 
         if self.game_state == "INTRO":
@@ -511,10 +377,6 @@ class Game:
 
             self.draw_ending()
 
-    # ========================================================
-    # CUTSCENE
-    # ========================================================
-
     def update_cutscene(self):
 
         pass
@@ -524,10 +386,6 @@ class Game:
         self.screen.fill(
             (251, 198, 207)
         )
-
-        # ----------------------------------------------------
-        # MAIN TEXT
-        # ----------------------------------------------------
 
         text = self.font_main.render(
             self.lines[self.line_index],
@@ -544,10 +402,6 @@ class Game:
             )
         )
 
-        # ----------------------------------------------------
-        # PROMPT
-        # ----------------------------------------------------
-
         prompt = self.font_small.render(
             "Press SPACE to continue",
             True,
@@ -563,15 +417,7 @@ class Game:
             )
         )
 
-    # ========================================================
-    # PLAYER
-    # ========================================================
-
     def update_player(self):
-
-        # ====================================================
-        # CHASING SOMEONE
-        # ====================================================
 
         if self.target_person is not None:
 
@@ -581,25 +427,13 @@ class Game:
                 - self.player_width // 2
             )
 
-            # ------------------------------------------------
-            # MOVE TOWARD PERSON
-            # ------------------------------------------------
-
             if self.player_x < target_x:
 
-                self.player_x += (
-                    self.player_speed
-                )
+                self.player_x += self.player_speed
 
             elif self.player_x > target_x:
 
-                self.player_x -= (
-                    self.player_speed
-                )
-
-            # ------------------------------------------------
-            # CONFRONTATION
-            # ------------------------------------------------
+                self.player_x -= self.player_speed
 
             if (
                 abs(
@@ -613,17 +447,10 @@ class Game:
 
                 person = self.target_person
 
-                # Clear target immediately
                 self.target_person = None
 
-                # Put person into dialogue
                 person.state = "DIALOGUE"
-
                 person.dialogue_timer = 0
-
-                # ============================================
-                # FULL-TIME WORKER
-                # ============================================
 
                 if not person.is_intern:
 
@@ -639,10 +466,6 @@ class Game:
                         ]
                     )
 
-                # ============================================
-                # ACTUAL INTERN
-                # ============================================
-
                 else:
 
                     self.stress -= 5
@@ -657,41 +480,25 @@ class Game:
                         ]
                     )
 
-        # ====================================================
-        # NORMAL MOVEMENT
-        # ====================================================
-
         else:
 
             keys = pygame.key.get_pressed()
 
             if keys[pygame.K_w]:
 
-                self.player_y -= (
-                    self.player_speed
-                )
+                self.player_y -= self.player_speed
 
             if keys[pygame.K_s]:
 
-                self.player_y += (
-                    self.player_speed
-                )
+                self.player_y += self.player_speed
 
             if keys[pygame.K_a]:
 
-                self.player_x -= (
-                    self.player_speed
-                )
+                self.player_x -= self.player_speed
 
             if keys[pygame.K_d]:
 
-                self.player_x += (
-                    self.player_speed
-                )
-
-        # ====================================================
-        # KEEP PLAYER ON SCREEN
-        # ====================================================
+                self.player_x += self.player_speed
 
         self.player_x = max(
             0,
@@ -711,10 +518,6 @@ class Game:
             )
         )
 
-    # ========================================================
-    # DRAW PLAYER
-    # ========================================================
-
     def draw_player(self):
 
         self.screen.blit(
@@ -725,43 +528,18 @@ class Game:
             )
         )
 
-    # ========================================================
-    # SPAWN PERSON
-    # ========================================================
-
     def spawn_person(self):
 
-        # ----------------------------------------------------
-        # SPAWN FROM LEFT SIDE
-        # ----------------------------------------------------
-
         x = -self.person_width
-
-        # ----------------------------------------------------
-        # RANDOM VERTICAL POSITION
-        # ----------------------------------------------------
 
         y = random.randint(
             170,
             300
         )
 
-        # ----------------------------------------------------
-        # RANDOM TYPE
-        # ----------------------------------------------------
-        #
-        # 80% = full-time worker
-        # 20% = intern
-        #
-        # ----------------------------------------------------
-
         is_intern = (
             random.random() < 0.20
         )
-
-        # ----------------------------------------------------
-        # RANDOM SPRITE
-        # ----------------------------------------------------
 
         if is_intern:
 
@@ -775,10 +553,6 @@ class Game:
                 self.fulltime_images
             )
 
-        # ----------------------------------------------------
-        # CREATE PERSON
-        # ----------------------------------------------------
-
         person = Person(
             x,
             y,
@@ -791,20 +565,14 @@ class Game:
             person
         )
 
-    # ========================================================
-    # CATCH PERSON
-    # ========================================================
-
     def catch_person(self, pos):
 
-        # Don't select someone while already chasing
         if self.target_person is not None:
 
             return
 
         for person in self.people:
 
-            # Only walking people can be clicked
             if person.state != "WALKING":
 
                 continue
@@ -815,19 +583,10 @@ class Game:
 
                 break
 
-    # ========================================================
-    # UPDATE PEOPLE
-    # ========================================================
-
     def update_people(self):
-
-        # ====================================================
-        # SPAWN
-        # ====================================================
 
         self.spawn_timer += 1
 
-        # Only spawn until today's quota is reached
         if (
             len(self.people)
             + self.people_completed
@@ -843,32 +602,19 @@ class Game:
 
                 self.spawn_person()
 
-        # ====================================================
-        # UPDATE PEOPLE
-        # ====================================================
-
         for person in self.people:
 
             person.update()
 
-        # ====================================================
-        # REMOVE PEOPLE
-        # ====================================================
-
         remaining_people = []
 
         for person in self.people:
-
-            # ------------------------------------------------
-            # ESCAPED THROUGH RIGHT SIDE
-            # ------------------------------------------------
 
             if (
                 person.state == "WALKING"
                 and person.x > self.screen_width
             ):
 
-                # Only actual interns increase stress
                 if person.is_intern:
 
                     self.stress += 5
@@ -876,10 +622,6 @@ class Game:
                 self.people_completed += 1
 
                 continue
-
-            # ------------------------------------------------
-            # LEFT THROUGH TOP AFTER CONFRONTATION
-            # ------------------------------------------------
 
             if (
                 person.state == "LEAVING"
@@ -896,10 +638,6 @@ class Game:
 
         self.people = remaining_people
 
-    # ========================================================
-    # DRAW PEOPLE
-    # ========================================================
-
     def draw_people(self):
 
         for person in self.people:
@@ -907,10 +645,6 @@ class Game:
             person.draw(
                 self.screen
             )
-
-            # =================================================
-            # DIALOGUE BOX
-            # =================================================
 
             if person.state == "DIALOGUE":
 
@@ -926,10 +660,6 @@ class Game:
                 dialogue_y = (
                     person.y - 100
                 )
-
-                # ------------------------------------------------
-                # KEEP BOX ON SCREEN
-                # ------------------------------------------------
 
                 dialogue_x = max(
                     10,
@@ -953,10 +683,6 @@ class Game:
                     dialogue_height
                 )
 
-                # ------------------------------------------------
-                # BOX
-                # ------------------------------------------------
-
                 pygame.draw.rect(
                     self.screen,
                     (255, 255, 255),
@@ -972,10 +698,6 @@ class Game:
                     border_radius=10
                 )
 
-                # ------------------------------------------------
-                # TEXT
-                # ------------------------------------------------
-
                 dialogue_text = self.font_tiny.render(
                     person.dialogue,
                     True,
@@ -990,10 +712,6 @@ class Game:
                     )
                 )
 
-    # ========================================================
-    # TOWER / MAP
-    # ========================================================
-
     def update_tower(self):
 
         pass
@@ -1002,10 +720,6 @@ class Game:
 
         pass
 
-    # ========================================================
-    # SNACK SYSTEM
-    # ========================================================
-
     def update_snacks(self):
 
         pass
@@ -1013,10 +727,6 @@ class Game:
     def draw_snacks(self):
 
         pass
-
-    # ========================================================
-    # STRESS LEVEL
-    # ========================================================
 
     def get_stress_level(self):
 
@@ -1035,10 +745,6 @@ class Game:
         else:
 
             return "25"
-
-    # ========================================================
-    # STRESS POPUP
-    # ========================================================
 
     def trigger_stress_popup(self, level):
 
@@ -1070,13 +776,7 @@ class Game:
             self.stress_popup_duration
         )
 
-    # ========================================================
-    # UPDATE STRESS
-    # ========================================================
-
     def update_stress(self):
-
-        # Keep stress between 0 and 100
 
         self.stress = max(
             0,
@@ -1089,11 +789,6 @@ class Game:
         current_level = (
             self.get_stress_level()
         )
-
-        # ----------------------------------------------------
-        # TRIGGER POPUP WHEN ENTERING
-        # DIFFERENT STRESS RANGE
-        # ----------------------------------------------------
 
         if (
             current_level
@@ -1108,59 +803,27 @@ class Game:
                 current_level
             )
 
-        # ----------------------------------------------------
-        # POPUP COUNTDOWN
-        # ----------------------------------------------------
-
         if self.stress_popup_timer > 0:
 
             self.stress_popup_timer -= 1
 
-    # ========================================================
-    # PLAYER SPEED
-    # ========================================================
-
     def get_player_speed(self):
-
-        # ----------------------------------------------------
-        # 0-25%
-        # CALM BUFF
-        # ----------------------------------------------------
 
         if self.stress <= 25:
 
             return 6
 
-        # ----------------------------------------------------
-        # 26-50%
-        # NORMAL
-        # ----------------------------------------------------
-
         elif self.stress <= 50:
 
             return 5
-
-        # ----------------------------------------------------
-        # 51-75%
-        # STRESSED
-        # ----------------------------------------------------
 
         elif self.stress <= 75:
 
             return 4
 
-        # ----------------------------------------------------
-        # 76-100%
-        # OVERWHELMED
-        # ----------------------------------------------------
-
         else:
 
             return 3
-
-    # ========================================================
-    # STRESS EFFECT TEXT
-    # ========================================================
 
     def get_stress_effect_text(self):
 
@@ -1188,20 +851,12 @@ class Game:
                 "DEBUFF: OVERWHELMED - movement greatly slowed"
             )
 
-    # ========================================================
-    # DRAW STRESS BAR
-    # ========================================================
-
     def draw_stress_bar(self):
-
-        # ----------------------------------------------------
-        # LABEL
-        # ----------------------------------------------------
 
         stress_text = self.font_small.render(
             f"STRESS: {int(self.stress)}%",
             True,
-            (255, 255, 255)
+            (0, 0, 0)
         )
 
         self.screen.blit(
@@ -1211,10 +866,6 @@ class Game:
                 self.stress_bar_y - 25
             )
         )
-
-        # ----------------------------------------------------
-        # BACKGROUND
-        # ----------------------------------------------------
 
         pygame.draw.rect(
             self.screen,
@@ -1226,10 +877,6 @@ class Game:
                 self.stress_bar_height
             )
         )
-
-        # ----------------------------------------------------
-        # FILLED BAR
-        # ----------------------------------------------------
 
         filled_width = int(
             self.stress_bar_width
@@ -1247,13 +894,9 @@ class Game:
             )
         )
 
-        # ----------------------------------------------------
-        # BORDER
-        # ----------------------------------------------------
-
         pygame.draw.rect(
             self.screen,
-            (255, 255, 255),
+            (0, 0, 0),
             (
                 self.stress_bar_x,
                 self.stress_bar_y,
@@ -1262,10 +905,6 @@ class Game:
             ),
             2
         )
-
-    # ========================================================
-    # DRAW STRESS POPUP
-    # ========================================================
 
     def draw_stress_popup(self):
 
@@ -1290,37 +929,25 @@ class Game:
             popup_height
         )
 
-        # ----------------------------------------------------
-        # BACKGROUND
-        # ----------------------------------------------------
-
         pygame.draw.rect(
             self.screen,
-            (40, 40, 40),
+            (255, 255, 255),
             popup_rect,
             border_radius=12
         )
 
-        # ----------------------------------------------------
-        # BORDER
-        # ----------------------------------------------------
-
         pygame.draw.rect(
             self.screen,
-            (255, 255, 255),
+            (0, 0, 0),
             popup_rect,
             2,
             border_radius=12
         )
 
-        # ----------------------------------------------------
-        # TEXT
-        # ----------------------------------------------------
-
         text = self.font_main.render(
             self.stress_popup,
             True,
-            (255, 255, 255)
+            (0, 0, 0)
         )
 
         self.screen.blit(
@@ -1332,16 +959,7 @@ class Game:
             )
         )
 
-    # ========================================================
-    # START NEW DAY
-    # ========================================================
-
     def start_new_day(self):
-
-        # ----------------------------------------------------
-        # IF DAY 5 IS FINISHED
-        # GAME ENDS
-        # ----------------------------------------------------
 
         if self.day >= self.max_day:
 
@@ -1349,15 +967,7 @@ class Game:
 
             return
 
-        # ----------------------------------------------------
-        # INCREASE DAY
-        # ----------------------------------------------------
-
         self.day += 1
-
-        # ----------------------------------------------------
-        # NEW DAY VALUES
-        # ----------------------------------------------------
 
         self.total_people_today = (
             self.interns_per_day[self.day]
@@ -1372,17 +982,9 @@ class Game:
 
         self.spawn_timer = 0
 
-        # ----------------------------------------------------
-        # CLEAR PEOPLE
-        # ----------------------------------------------------
-
         self.people.clear()
 
         self.target_person = None
-
-        # ----------------------------------------------------
-        # RESET PLAYER
-        # ----------------------------------------------------
 
         self.player_x = (
             self.screen_width // 2
@@ -1392,31 +994,12 @@ class Game:
             self.screen_height // 2
         )
 
-        # ----------------------------------------------------
-        # RESET STRESS
-        # ----------------------------------------------------
-
         self.stress = 50
-
         self.last_stress_level = None
-
-    # ========================================================
-    # UPDATE DAY TIMER
-    # ========================================================
 
     def update_day_timer(self):
 
         self.day_timer -= 1
-
-        # ----------------------------------------------------
-        # DAY ENDS WHEN:
-        #
-        # 1. TIME RUNS OUT
-        #
-        # OR
-        #
-        # 2. ALL PEOPLE HAVE BEEN DEALT WITH
-        # ----------------------------------------------------
 
         if (
             self.day_timer <= 0
@@ -1427,20 +1010,12 @@ class Game:
 
             self.start_new_day()
 
-    # ========================================================
-    # DAY INFORMATION
-    # ========================================================
-
     def draw_day_info(self):
-
-        # ----------------------------------------------------
-        # DAY
-        # ----------------------------------------------------
 
         day_text = self.font_small.render(
             f"DAY {self.day}",
             True,
-            (255, 255, 255)
+            (0, 0, 0)
         )
 
         day_background = pygame.Rect(
@@ -1452,8 +1027,16 @@ class Game:
 
         pygame.draw.rect(
             self.screen,
-            (50, 50, 50),
+            (255, 255, 255),
             day_background,
+            border_radius=8
+        )
+
+        pygame.draw.rect(
+            self.screen,
+            (0, 0, 0),
+            day_background,
+            2,
             border_radius=8
         )
 
@@ -1461,10 +1044,6 @@ class Game:
             day_text,
             (30, 27)
         )
-
-        # ----------------------------------------------------
-        # PEOPLE LEFT
-        # ----------------------------------------------------
 
         people_left = (
             self.total_people_today
@@ -1474,17 +1053,13 @@ class Game:
         people_text = self.font_tiny.render(
             f"PEOPLE LEFT: {people_left}/{self.total_people_today}",
             True,
-            (255, 255, 255)
+            (0, 0, 0)
         )
 
         self.screen.blit(
             people_text,
             (30, 60)
         )
-
-        # ----------------------------------------------------
-        # TIME
-        # ----------------------------------------------------
 
         seconds_left = max(
             0,
@@ -1502,7 +1077,7 @@ class Game:
         time_text = self.font_tiny.render(
             f"TIME: {minutes}:{seconds:02d}",
             True,
-            (255, 255, 255)
+            (0, 0, 0)
         )
 
         self.screen.blit(
@@ -1510,14 +1085,10 @@ class Game:
             (190, 25)
         )
 
-        # ----------------------------------------------------
-        # STRESS EFFECT
-        # ----------------------------------------------------
-
         effect_text = self.font_tiny.render(
             self.get_stress_effect_text(),
             True,
-            (255, 255, 255)
+            (0, 0, 0)
         )
 
         self.screen.blit(
@@ -1525,46 +1096,20 @@ class Game:
             (190, 55)
         )
 
-    # ========================================================
-    # GAMEPLAY UPDATE
-    # ========================================================
-
     def update_gameplay(self):
-
-        # Stress determines movement speed
 
         self.player_speed = (
             self.get_player_speed()
         )
 
         self.update_player()
-
         self.update_people()
-
         self.update_tower()
-
         self.update_snacks()
-
         self.update_stress()
-
         self.update_day_timer()
 
-    # ========================================================
-    # GAMEPLAY DRAW
-    # ========================================================
-
     def draw_gameplay(self):
-
-        # ====================================================
-        # BACKGROUND
-        # ====================================================
-        #
-        # Day 1 = backgrounds[0]
-        # Day 2 = backgrounds[1]
-        # ...
-        # Day 5 = backgrounds[4]
-        #
-        # ====================================================
 
         background = self.backgrounds[
             self.day - 1
@@ -1575,31 +1120,14 @@ class Game:
             (0, 0)
         )
 
-        # ====================================================
-        # GAME OBJECTS
-        # ====================================================
-
         self.draw_tower()
-
         self.draw_people()
-
         self.draw_player()
-
         self.draw_snacks()
 
-        # ====================================================
-        # UI
-        # ====================================================
-
         self.draw_day_info()
-
         self.draw_stress_bar()
-
         self.draw_stress_popup()
-
-    # ========================================================
-    # ENDING
-    # ========================================================
 
     def update_ending(self):
 
@@ -1610,10 +1138,6 @@ class Game:
         self.screen.fill(
             (30, 30, 50)
         )
-
-        # ----------------------------------------------------
-        # TITLE
-        # ----------------------------------------------------
 
         title = self.font_main.render(
             "THE WORKDAY IS OVER",
@@ -1630,12 +1154,8 @@ class Game:
             )
         )
 
-        # ----------------------------------------------------
-        # MESSAGE
-        # ----------------------------------------------------
-
         message = self.font_small.render(
-            "You survived the Nokia Ottawa Office.",
+            "You survived the Mokia Ottawa Office.",
             True,
             (255, 255, 255)
         )
@@ -1649,10 +1169,6 @@ class Game:
             )
         )
 
-
-# ============================================================
-# START GAME
-# ============================================================
 
 def main():
 
