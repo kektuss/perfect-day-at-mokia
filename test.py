@@ -4,26 +4,6 @@ import random
 import asyncio
 
 async def main():
-    pygame.init()
-    
-    # Settings
-
-    screen_width = 1080
-    screen_height = 720
-    fps = 60
-
-    screen = pygame.display.set_mode(
-        (
-            screen_width,
-            screen_height
-        )
-    )
-
-    pygame.display.set_caption(
-        "Mokia"
-    )
-
-    clock = pygame.time.Clock()
     class Person:
 
         def __init__(self, x, y, is_intern, image,game):
@@ -45,7 +25,7 @@ async def main():
             self.dialogue_timer = 0
 
             self.dialogue_duration = int(
-                1.5 * 60
+                1.5 * game.fps
             )
 
         def get_rect(self):
@@ -79,13 +59,29 @@ async def main():
 
 
     class Game:
+
         def __init__(self):
+
+            pygame.init()
 
             # Settings
 
-            self.screen = screen
+            self.screen_width = 1080
+            self.screen_height = 720
+            self.fps = 60
 
-            self.clock = clock
+            self.screen = pygame.display.set_mode(
+                (
+                    self.screen_width,
+                    self.screen_height
+                )
+            )
+
+            pygame.display.set_caption(
+                "Mokia"
+            )
+
+            self.clock = pygame.time.Clock()
 
             # Game state
 
@@ -98,7 +94,7 @@ async def main():
             self.max_day = 5
 
             self.day_timer = (
-                self.day_length * 60
+                self.day_length * self.fps
             )
 
             self.interns_per_day = {
@@ -126,11 +122,11 @@ async def main():
             self.player_height = 90
 
             self.player_x = (
-                screen_width // 2
+                self.screen_width // 2
             )
 
             self.player_y = (
-                screen_height // 2
+                self.screen_height // 2
             )
 
             self.player_speed = 5
@@ -159,8 +155,8 @@ async def main():
                 image = pygame.transform.scale(
                     image,
                     (
-                        screen_width,
-                        screen_height
+                        self.screen_width,
+                        self.screen_height
                     )
                 )
 
@@ -255,7 +251,7 @@ async def main():
             self.stress_bar_height = 25
 
             self.stress_bar_x = (
-                screen_width
+                self.screen_width
                 - self.stress_bar_width
                 - 30
             )
@@ -267,6 +263,27 @@ async def main():
             self.stress_popup = ""
             self.stress_popup_timer = 0
             self.stress_popup_duration = 150
+
+        async def run(self):
+
+            running = True
+
+            while running:
+
+                running = self.handle_events()
+
+                self.update()
+                self.draw()
+
+                pygame.display.flip()
+
+                self.clock.tick(
+                    self.fps
+                )
+
+                await asyncio.sleep(0)
+
+            pygame.quit()
 
         def handle_events(self):
 
@@ -293,7 +310,7 @@ async def main():
 
                                 self.day_timer = (
                                     self.day_length
-                                    * 60
+                                    * self.fps
                                 )
 
                 elif self.game_state == "GAMEPLAY":
@@ -362,9 +379,9 @@ async def main():
             self.screen.blit(
                 text,
                 (
-                    screen_width // 2
+                    self.screen_width // 2
                     - text.get_width() // 2,
-                    screen_height // 2
+                    self.screen_height // 2
                 )
             )
 
@@ -377,9 +394,9 @@ async def main():
             self.screen.blit(
                 prompt,
                 (
-                    screen_width // 2
+                    self.screen_width // 2
                     - prompt.get_width() // 2,
-                    screen_height - 60
+                    self.screen_height - 60
                 )
             )
 
@@ -470,7 +487,7 @@ async def main():
                 0,
                 min(
                     self.player_x,
-                    screen_width
+                    self.screen_width
                     - self.player_width
                 )
             )
@@ -479,7 +496,7 @@ async def main():
                 0,
                 min(
                     self.player_y,
-                    screen_height
+                    self.screen_height
                     - self.player_height
                 )
             )
@@ -578,7 +595,7 @@ async def main():
 
                 if (
                     person.state == "WALKING"
-                    and person.x > screen_width
+                    and person.x > self.screen_width
                 ):
 
                     if person.is_intern:
@@ -631,7 +648,7 @@ async def main():
                         10,
                         min(
                             dialogue_x,
-                            screen_width
+                            self.screen_width
                             - dialogue_width
                             - 10
                         )
@@ -882,7 +899,7 @@ async def main():
             popup_height = 90
 
             popup_x = (
-                screen_width // 2
+                self.screen_width // 2
                 - popup_width // 2
             )
 
@@ -919,7 +936,7 @@ async def main():
             self.screen.blit(
                 text,
                 (
-                    screen_width // 2
+                    self.screen_width // 2
                     - text.get_width() // 2,
                     popup_y + 27
                 )
@@ -943,7 +960,7 @@ async def main():
 
             self.day_timer = (
                 self.day_length
-                * 60
+                * self.fps
             )
 
             self.spawn_timer = 0
@@ -953,11 +970,11 @@ async def main():
             self.target_person = None
 
             self.player_x = (
-                screen_width // 2
+                self.screen_width // 2
             )
 
             self.player_y = (
-                screen_height // 2
+                self.screen_height // 2
             )
 
             self.stress = 50
@@ -1029,7 +1046,7 @@ async def main():
 
             seconds_left = max(
                 0,
-                self.day_timer // 60
+                self.day_timer // self.fps
             )
 
             minutes = (
@@ -1114,7 +1131,7 @@ async def main():
             self.screen.blit(
                 title,
                 (
-                    screen_width // 2
+                    self.screen_width // 2
                     - title.get_width() // 2,
                     250
                 )
@@ -1129,31 +1146,14 @@ async def main():
             self.screen.blit(
                 message,
                 (
-                    screen_width // 2
+                    self.screen_width // 2
                     - message.get_width() // 2,
                     310
                 )
             )
     game = Game()
-    
-    running = True
+    await game.run()
 
-    while running:
-
-        running = game.handle_events()
-
-        game.update()
-        game.draw()
-
-        game.clock.tick(
-                    60
-                )
-
-        pygame.display.flip()
-
-        await asyncio.sleep(0)
-
-    pygame.quit()
 
 if __name__ == "__main__":
     asyncio.run(main())
