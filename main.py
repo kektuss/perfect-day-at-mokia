@@ -52,10 +52,12 @@ PLAYER_WIDTH = 40
 PLAYER_HEIGHT = 60
 
 
+# ------------------------------------------------------------
 # Load player image
+# ------------------------------------------------------------
+
 player_image = pygame.image.load("assets/player.jpg")
 
-# Resize player image
 player_image = pygame.transform.scale(
     player_image,
     (PLAYER_WIDTH, PLAYER_HEIGHT)
@@ -63,52 +65,62 @@ player_image = pygame.transform.scale(
 
 
 def update_player():
-    global player_x, player_y
-    global target_person, stress
 
-    # --------------------------------------------------------
-    # CHASING AN INTERN
-    # --------------------------------------------------------
+    global player_x
+    global player_y
+    global target_person
+    global stress
+
+    # ========================================================
+    # CHASING SOMEONE
+    # ========================================================
 
     if target_person is not None:
 
-        # Target the center of the intern
+        # Follow the person's X position
         target_x = (
             target_person.x
             + INTERN_WIDTH // 2
             - PLAYER_WIDTH // 2
         )
 
-        # Move left or right toward them
+        # Move toward them
         if player_x < target_x:
             player_x += player_speed
 
         elif player_x > target_x:
             player_x -= player_speed
 
-        # Player stays at their current Y position
-        # while chasing
+        # Player does NOT change Y while chasing
 
-        # Check if player reached the person
+        # Check if we reached them
         if abs(player_x - target_x) <= player_speed:
 
             player_x = target_x
 
-            # Catch the person
+            # Catch them
             target_person.caught = True
 
-            # Change stress depending on who was caught
+            # ------------------------------------------------
+            # Stress change
+            # ------------------------------------------------
+
             if target_person.has_badge:
+
+                # Accidentally interrupted staff
                 stress += 10
+
             else:
+
+                # Successfully caught intern
                 stress -= 5
 
             # Stop chasing
             target_person = None
 
-    # --------------------------------------------------------
-    # NORMAL MOVEMENT
-    # --------------------------------------------------------
+    # ========================================================
+    # NORMAL WASD MOVEMENT
+    # ========================================================
 
     else:
 
@@ -126,22 +138,29 @@ def update_player():
         if keys[pygame.K_d]:
             player_x += player_speed
 
-    # --------------------------------------------------------
+    # ========================================================
     # KEEP PLAYER INSIDE SCREEN
-    # --------------------------------------------------------
+    # ========================================================
 
     player_x = max(
         0,
-        min(player_x, SCREEN_WIDTH - PLAYER_WIDTH)
+        min(
+            player_x,
+            SCREEN_WIDTH - PLAYER_WIDTH
+        )
     )
 
     player_y = max(
         0,
-        min(player_y, SCREEN_HEIGHT - PLAYER_HEIGHT)
+        min(
+            player_y,
+            SCREEN_HEIGHT - PLAYER_HEIGHT
+        )
     )
 
 
 def draw_player():
+
     SCREEN.blit(
         player_image,
         (player_x, player_y)
@@ -169,7 +188,7 @@ def update_cutscene():
 
 def draw_cutscene():
 
-    # Clear the screen
+    # Clear screen
     SCREEN.fill((251, 198, 207))
 
     # Main text
@@ -187,7 +206,7 @@ def draw_cutscene():
         )
     )
 
-    # Continue prompt
+    # Prompt
     prompt = FONT_SMALL.render(
         "Press SPACE to continue",
         True,
@@ -204,7 +223,7 @@ def draw_cutscene():
 
 
 # ============================================================
-# INTERNS — FRIEND
+# INTERNS / STAFF
 # ============================================================
 
 INTERN_WIDTH = 40
@@ -224,28 +243,89 @@ class Intern:
         self.has_badge = has_badge
         self.caught = False
 
-        self.lifetime = 0
+        # ----------------------------------------------------
+        # Walking
+        # ----------------------------------------------------
 
-        # How long this person stays on screen
-        self.max_lifetime = random.randint(180, 360)
+        self.speed = random.uniform(1.5, 3.0)
 
-        # Staff = blue
-        # Intern = lighter blue
-        self.color = (
-            (100, 149, 237)
-            if has_badge
-            else (121, 186, 236)
-        )
+        # Distance before pausing
+        self.walk_distance = random.randint(250, 500)
+
+        # Starting position
+        self.start_x = x
+
+        # Pause duration
+        self.pause_time = random.randint(60, 120)
+        self.pause_timer = 0
+
+        # Pause only happens once
+        self.has_paused = False
+
+        # Current state
+        self.state = "WALKING"
+
+        # ----------------------------------------------------
+        # Colours
+        # ----------------------------------------------------
+
+        if has_badge:
+
+            # Staff
+            self.color = (100, 149, 237)
+
+        else:
+
+            # Intern
+            self.color = (121, 186, 236)
 
 
     def get_rect(self):
 
         return pygame.Rect(
-            self.x,
-            self.y,
+            int(self.x),
+            int(self.y),
             INTERN_WIDTH,
             INTERN_HEIGHT
         )
+
+
+    def update(self):
+
+        if self.caught:
+            return
+
+        # ====================================================
+        # WALKING
+        # ====================================================
+
+        if self.state == "WALKING":
+
+            self.x += self.speed
+
+            # Check whether they should pause
+            if (
+                not self.has_paused
+                and self.x >= self.start_x + self.walk_distance
+            ):
+
+                self.state = "PAUSED"
+                self.pause_timer = 0
+
+        # ====================================================
+        # PAUSED
+        # ====================================================
+
+        elif self.state == "PAUSED":
+
+            self.pause_timer += 1
+
+            if self.pause_timer >= self.pause_time:
+
+                self.state = "WALKING"
+
+                # They can never pause again
+                self.has_paused = True
 
 
     def draw(self):
@@ -260,16 +340,17 @@ class Intern:
         )
 
 
+# ============================================================
+# SPAWN INTERN
+# ============================================================
+
 def spawn_intern():
 
     while True:
 
-        x = random.randint(
-            50,
-            SCREEN_WIDTH - INTERN_WIDTH - 50
-        )
+        # Spawn just outside the left side
+        x = -INTERN_WIDTH
 
-        # Currently everyone spawns near the top
         y = 200
 
         new_rect = pygame.Rect(
@@ -281,8 +362,7 @@ def spawn_intern():
 
         overlapping = False
 
-        # Make sure the new person doesn't overlap
-        # an existing person
+        # Make sure people don't overlap
         for person in interns:
 
             if new_rect.colliderect(
@@ -294,7 +374,8 @@ def spawn_intern():
 
         if not overlapping:
 
-            # 80% chance of being staff
+            # 80% staff
+            # 20% intern
             has_badge = random.random() < 0.80
 
             interns.append(
@@ -308,6 +389,10 @@ def spawn_intern():
             return
 
 
+# ============================================================
+# CLICK ON INTERN
+# ============================================================
+
 def catch_intern(pos):
 
     global target_person
@@ -319,13 +404,19 @@ def catch_intern(pos):
 
         if person.get_rect().collidepoint(pos):
 
-            # Tell the player to follow this person
+            # Make this person the target
             target_person = person
 
-            # Don't mark them as caught yet.
-            # They get caught when the player reaches them.
+            # IMPORTANT:
+            # They are NOT caught yet.
+            # The player has to reach them first.
+
             break
 
+
+# ============================================================
+# UPDATE INTERNS
+# ============================================================
 
 def update_interns():
 
@@ -333,9 +424,9 @@ def update_interns():
     global stress
     global target_person
 
-    # --------------------------------------------------------
-    # SPAWN PEOPLE
-    # --------------------------------------------------------
+    # ========================================================
+    # SPAWN
+    # ========================================================
 
     spawn_timer += 1
 
@@ -346,48 +437,58 @@ def update_interns():
         spawn_intern()
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # UPDATE PEOPLE
-    # --------------------------------------------------------
+    # ========================================================
 
     for person in interns:
 
-        if person.caught:
+        if not person.caught:
+
+            person.update()
+
+
+    # ========================================================
+    # PEOPLE LEAVE SCREEN
+    # ========================================================
+
+    remaining_people = []
+
+    for person in interns:
+
+        # Don't remove someone being chased
+        if person == target_person:
+
+            remaining_people.append(person)
+
             continue
 
-        person.lifetime += 1
+        # Check if they walked off the right side
+        if person.x > SCREEN_WIDTH:
 
-        # Person leaves when their timer expires.
-        #
-        # Don't let the person being chased disappear.
-        if (
-            person.lifetime >= person.max_lifetime
-            and person != target_person
-        ):
-
-            # Escaped interns increase stress
+            # ONLY escaped interns increase stress
             if not person.has_badge:
+
                 stress += 5
 
-            # Staff leaving does not change stress
+            # Staff escaping does nothing
 
-            person.caught = True
+            continue
+
+        remaining_people.append(person)
 
 
-    # --------------------------------------------------------
-    # REMOVE CAUGHT / ESCAPED PEOPLE
-    # --------------------------------------------------------
+    interns[:] = remaining_people
 
-    interns[:] = [
-        person
-        for person in interns
-        if not person.caught
-    ]
 
+# ============================================================
+# DRAW INTERNS
+# ============================================================
 
 def draw_interns():
 
     for person in interns:
+
         person.draw()
 
 
@@ -416,7 +517,7 @@ def draw_snacks():
 
 
 # ============================================================
-# STRESS SYSTEM — YOU
+# STRESS SYSTEM
 # ============================================================
 
 STRESS_BAR_WIDTH = 250
@@ -444,9 +545,9 @@ def update_stress():
 
 def draw_stress_bar():
 
-    # --------------------------------------------------------
-    # STRESS LABEL
-    # --------------------------------------------------------
+    # ========================================================
+    # LABEL
+    # ========================================================
 
     stress_text = FONT_SMALL.render(
         f"STRESS: {int(stress)}%",
@@ -462,9 +563,9 @@ def draw_stress_bar():
         )
     )
 
-    # --------------------------------------------------------
-    # BAR BACKGROUND
-    # --------------------------------------------------------
+    # ========================================================
+    # BACKGROUND
+    # ========================================================
 
     pygame.draw.rect(
         SCREEN,
@@ -477,9 +578,9 @@ def draw_stress_bar():
         )
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # FILLED PART
-    # --------------------------------------------------------
+    # ========================================================
 
     filled_width = int(
         STRESS_BAR_WIDTH
@@ -497,9 +598,9 @@ def draw_stress_bar():
         )
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # BORDER
-    # --------------------------------------------------------
+    # ========================================================
 
     pygame.draw.rect(
         SCREEN,
@@ -529,10 +630,15 @@ def update_gameplay():
 
 def draw_gameplay():
 
-    # Clear previous frame
+    # IMPORTANT:
+    # Clear the previous frame so characters don't leave
+    # trails behind them.
     SCREEN.fill((40, 90, 40))
 
-    # Draw game objects
+    # ========================================================
+    # GAME OBJECTS
+    # ========================================================
+
     draw_tower()
     draw_snacks()
     draw_interns()
@@ -548,7 +654,6 @@ def draw_gameplay():
         (255, 255, 255)
     )
 
-    # Background behind day
     day_background = pygame.Rect(
         20,
         20,
@@ -562,14 +667,13 @@ def draw_gameplay():
         day_background
     )
 
-    # Day text
     SCREEN.blit(
         day_text,
         (30, 25)
     )
 
     # ========================================================
-    # STRESS BAR — TOP RIGHT
+    # STRESS — TOP RIGHT
     # ========================================================
 
     draw_stress_bar()
@@ -595,19 +699,23 @@ running = True
 
 while running:
 
-    # --------------------------------------------------------
+    # ========================================================
     # EVENTS
-    # --------------------------------------------------------
+    # ========================================================
 
     for event in pygame.event.get():
 
-        # Quit
+        # ----------------------------------------------------
+        # QUIT
+        # ----------------------------------------------------
+
         if event.type == pygame.QUIT:
+
             running = False
 
 
         # ====================================================
-        # INTRO CONTROLS
+        # INTRO
         # ====================================================
 
         if game_state == "INTRO":
@@ -625,7 +733,7 @@ while running:
 
 
         # ====================================================
-        # GAMEPLAY CONTROLS
+        # GAMEPLAY
         # ====================================================
 
         elif game_state == "GAMEPLAY":
@@ -635,9 +743,9 @@ while running:
                 catch_intern(event.pos)
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # UPDATE + DRAW
-    # --------------------------------------------------------
+    # ========================================================
 
     if game_state == "INTRO":
 
@@ -657,9 +765,9 @@ while running:
         draw_ending()
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # DISPLAY
-    # --------------------------------------------------------
+    # ========================================================
 
     pygame.display.flip()
 
